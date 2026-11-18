@@ -1,0 +1,107 @@
+import logging
+import random
+
+# Configuración del sistema de logs para registrar errores y eventos
+logging.basicConfig(
+    filename="registro_errores.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
+
+# 1. Excepciones personalizadas
+class ErrorEntradaNoValida(Exception):
+  """Excepción para cuando el usuario ingresa algo que no es un número."""
+
+  pass
+
+
+class ErrorFueraDeRango(Exception):
+  """Excepción para cuando el número está fuera del rango permitido (1-50)."""
+
+  pass
+
+
+class AdivinaNumeroJuego:
+  """Clase principal que encapsula la lógica del juego de adivinanza (POO)."""
+
+  def __init__(self, minimo=1, maximo=50):
+    self.minimo = minimo
+    self.maximo = maximo
+    self.numero_secreto = random.randint(minimo, maximo)
+    logging.info("Juego inicializado y número secreto generado.")
+
+  def validar_entrada(self, texto_usuario):
+    """Valida la entrada aplicando try/except, try/except/else,
+
+    try/finally y encadenamiento de excepciones.
+    """
+    try:
+      # Intenta convertir el texto a entero
+      numero = int(texto_usuario)
+    except ValueError as e:
+      # Encadenamiento de excepciones (raise ... from ...)
+      logging.error(f"Error de tipo detectado: {e}")
+      raise ErrorEntradaNoValida(
+          "Debe digitar obligatoriamente un número entero válido."
+      ) from e
+    else:
+      # Se ejecuta si la conversión fue exitosa (try/except/else)
+      if not (self.minimo <= numero <= self.maximo):
+        raise ErrorFueraDeRango(
+            f"El número debe estar entre {self.minimo} y {self.maximo}."
+        )
+      return numero
+    finally:
+      # Bloque finally que siempre se ejecuta al cerrar la validación
+      print("-> [Log interno] Ciclo de validación de entrada finalizado.")
+
+  def iniciar(self):
+    """Bucle principal del juego que garantiza que la aplicación no se detenga."""
+    print(
+        f"¡Bienvenido al juego de adivinanza! Adivina el número entre"
+        f" {self.minimo} y {self.maximo}."
+    )
+    logging.info("Inicio de la sesión de juego interactiva.")
+
+    while True:
+      try:
+        entrada = input(
+            "\nIngresa tu número (o escribe 'salir' para terminar): "
+        )
+        if entrada.lower() == "salir":
+          print("¡Gracias por jugar!")
+          logging.info("El usuario finalizó el juego voluntariamente.")
+          break
+
+        # Validación del número ingresado
+        intento = self.validar_entrada(entrada)
+
+      except ErrorEntradaNoValida as ex:
+        print(f"[Error controlado]: {ex}")
+        logging.warning(f"Entrada inválida capturada: {ex}")
+      except ErrorFueraDeRango as ex:
+        print(f"[Error de rango]: {ex}")
+        logging.warning(f"Rango inválido capturado: {ex}")
+      except Exception as ex:
+        print(f"Ocurrió un error inesperado: {ex}")
+        logging.critical(f"Error crítico no esperado: {ex}")
+      else:
+        # Lógica de comparación si no hubo errores en el intento
+        if intento < self.numero_secreto:
+          print("Demasiado bajo. Sigue intentando.")
+        elif intento > self.numero_secreto:
+          print("Demasiado alto. Sigue intentando.")
+        else:
+          print(" ¡Felicitaciones! ¡Adivinaste el número secreto!")
+          logging.info(f"El usuario adivinó el número: {self.numero_secreto}")
+          break
+      finally:
+        # Bloque finally del juego principal
+        print("--- Intento procesado de forma segura ---")
+
+
+if __name__ == "__main__":
+  # Instanciación del objeto y ejecución del programa
+  juego = AdivinaNumeroJuego()
+  juego.jugar() if hasattr(juego, "jugar") else juego.iniciar()
